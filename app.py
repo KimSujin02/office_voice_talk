@@ -570,14 +570,18 @@ def render_chat():
                 unsafe_allow_html=True
             )
         else:
+            score_delta = msg.get("score_delta")
+            score_text = ""
+
+            if score_delta is not None:
+                sign = "+" if score_delta > 0 else ""
+                score_text = f"<br><small>점수 변화: {sign}{score_delta}</small>"
+
             st.markdown(
                 f"""
                 <div style='text-align:left; margin:10px 0;'>
                     <span style='background-color:#F1F0F0; padding:10px 14px; border-radius:12px; display:inline-block; max-width:75%;'>
-                        <b>{speaker}</b><br>{safe_text}
-                    </span>
-                    <span style='margin-left: 5px;'>
-                        {f"- 점수 변화: `{latest['score_delta']:+d}`" if latest else ""}
+                        <b>{speaker}</b><br>{safe_text}{score_text}
                     </span>
                 </div>
                 """,
@@ -627,18 +631,19 @@ def process_turn(audio_file, fallback_text: str = ""):
         )
         st.session_state.last_ai_reply = ai_reply
 
-        # AI 답장 저장
-        st.session_state.chat_history.append({
-            "role": "assistant",
-            "speaker": sim["target_role"],
-            "text": ai_reply
-        })
-
         # AI 답장의 감정 분석 + 점수 반영
         sentiment = analyze_ai_sentiment(ai_reply)
         st.session_state.last_sentiment = sentiment
 
         sim["score"] = clamp_score(sim["score"] + sentiment["score_delta"])
+        
+        # AI 답장 저장
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "speaker": sim["target_role"],
+            "text": ai_reply,
+            "score_delta": sentiment["score_delta"]
+        })
 
         st.session_state.turn_scores.append({
             "turn": sim["current_turn"],
@@ -793,9 +798,9 @@ else:
             latest = st.session_state.last_sentiment
             st.write("### 최근 감정분석 결과")
             st.write(
-                f"- 정규화 라벨: **{latest['label']}**\n"
-                f"- 원본 라벨: `{latest['raw_label']}`\n"
-                f"- confidence: `{latest['confidence']:.4f}`\n"
+                f"- 라벨: **{latest['label']}**\n"
+                # f"- 원본 라벨: `{latest['raw_label']}`\n"
+                # f"- confidence: `{latest['confidence']:.4f}`\n"
                 f"- 점수 변화: `{latest['score_delta']:+d}`"
             )
 
