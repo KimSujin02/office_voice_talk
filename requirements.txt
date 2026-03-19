@@ -1,4 +1,10 @@
-streamlit
-openai
+streamlit>=1.39.0
+openai>=1.0.0
+faster-whisper
+transformers>=4.0.0
+torch
 pandas
 matplotlib
+pyttsx3
+sentencepiece
+protobuf
